@@ -9,11 +9,11 @@ version = "0.1.0"
 description = "A transformer model for gene expression data"
 readme = "README.md"
 license = { text = "MIT" }
-requires-python = ">=3.10,<3.12"
+requires-python = ">=3.11"
 classifiers = [
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
   "anndata>=0.10.5",
@@ -43,8 +43,12 @@ optional-dependencies.dev = [
   "pre-commit",
   "pytest==8",
 ]
+
 urls."Bug Tracker" = "https://github.com/czi-ai/transcriptformer/issues"
 urls."Homepage" = "https://github.com/czi-ai/transcriptformer"
+
+[tool.hatch.build.targets.wheel]
+packages = [ "src/transcriptformer" ]
 
 [tool.ruff]
 line-length = 120
@@ -93,6 +97,3 @@ lint.pydocstyle.convention = "numpy"
 
 [tool.coverage.run]
 source = [ "src/transcriptformer" ]
-
-[tool.hatch.build.targets.wheel]
-packages = [ "src/transcriptformer" ]
