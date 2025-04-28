@@ -6,7 +6,7 @@ Transcriptformer is a deep learning model for cross-species single-cell RNA sequ
 
 ## Installation
 
-Transcriptformer requires Python 3.8-3.11 (3.11 recommended).
+Transcriptformer requires Python >=3.11.
 
 #### Install from source with uv
 
@@ -47,6 +47,9 @@ Transcriptformer has the following core dependencies:
 - hydra-core
 
 See the `pyproject.toml` file for the complete list of dependencies.
+
+### Hardware Requirements
+You'll need a Python environment with GPU access to run this model. While we've tested it on NVIDIA A100 GPUs, you can use smaller GPUs like the T4 for the smaller version of the model.
 
 ## Downloading Model Weights
 
@@ -166,3 +169,9 @@ The inference results will be saved to the specified output directory. The scrip
 Results are saved in HDF5 format with the same structure as the input data, with additional embedding matrices and likelihood scores.
 
 For detailed configuration options, see the `conf/inference_config.yaml` file.
+
+## Contributing
+This project adheres to the Contributor Covenant code of conduct. By participating, you are expected to uphold this code. Please report unacceptable behavior to opensource@chanzuckerberg.com.
+
+## Reporting Security Issues
+Please note: If you believe you have found a security issue, please responsibly disclose by contacting us at security@chanzuckerberg.com.
