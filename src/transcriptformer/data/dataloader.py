@@ -216,8 +216,9 @@ class AnnDataset(Dataset):
 
     def _get_batch_from_file(self, file: str | anndata.AnnData) -> BatchData | None:
         if isinstance(file, str):
+            file_path = file
             if self.data_dir is not None:
-                file_path = os.path.join(self.data_dir, file)
+                file_path = os.path.join(self.data_dir, file_path)
 
             adata, success = load_data(file_path)
         elif isinstance(file, anndata.AnnData):
