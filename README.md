@@ -37,7 +37,18 @@ For more details, please refer to our manuscript: [A Cross-Species Generative Ce
 
 Transcriptformer requires Python >=3.11.
 
-#### Install from source with uv
+### Install from PyPI
+
+```bash
+# Create and activate a virtual environment
+uv venv --python=3.11
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install from PyPI
+uv pip install transcriptformer
+```
+
+### Install from source
 
 ```bash
 # Clone the repository
@@ -50,17 +61,6 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
 # Install in development mode
 uv pip install -e .
-```
-
-#### Install from PyPI with uv
-
-```bash
-# Create and activate a virtual environment
-uv venv --python=3.11
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install from PyPI
-uv pip install transcriptformer
 ```
 
 ### Requirements
@@ -82,92 +82,76 @@ See the `pyproject.toml` file for the complete list of dependencies.
 - Can also use a GPU with a lower amount of VRAM (16GB) by setting the inference batch size to 1-4.
 
 
-## Downloading Model Weights
+## Using the TranscriptFormer CLI
 
-Model weights and artifacts are available via AWS S3. You can download them using the provided `download_artifacts.py` script:
+After installing the package, you'll have access to the `transcriptformer` command-line interface (CLI), which provides easy access to download model artifacts and run inference.
+
+### Downloading Model Weights
+
+Use the CLI to download model weights and artifacts from AWS S3:
 
 ```bash
 # Download a specific model
-python download_artifacts.py tf-sapiens
-python download_artifacts.py tf-exemplar
-python download_artifacts.py tf-metazoa
+transcriptformer download tf-sapiens
+transcriptformer download tf-exemplar
+transcriptformer download tf-metazoa
 
 # Download all models and embeddings
-python download_artifacts.py all
+transcriptformer download all
 
 # Download only the embedding files
-python download_artifacts.py all-embeddings
+transcriptformer download all-embeddings
 
 # Specify a custom checkpoint directory
-python download_artifacts.py tf-sapiens --checkpoint-dir /path/to/custom/dir
+transcriptformer download tf-sapiens --checkpoint-dir /path/to/custom/dir
 ```
 
-The script will download and extract the following files to the `./checkpoints` directory (or your specified directory):
+The command will download and extract the following files to the `./checkpoints` directory (or your specified directory):
 - `./checkpoints/tf_sapiens/`: Sapiens model weights
 - `./checkpoints/tf_exemplar/`: Exemplar model weights
 - `./checkpoints/tf_metazoa/`: Metazoa model weights
 - `./checkpoints/all_embeddings/`: Embedding files for out-of-distribution species
 
-The script includes progress bars for both download and extraction processes.
+### Running Inference
 
-## Running Inference
-
-The `inference.py` script provides a convenient interface for running inference with TranscriptFormer. The script uses Hydra for configuration management, allowing flexible parameter specification.
-
-Basic usage:
+Use the CLI to run inference with TranscriptFormer models:
 
 ```bash
-python inference.py --config-name=inference_config.yaml model.checkpoint_path=./checkpoints/tf_sapiens
+# Basic inference on in-distribution species (e.g., human with TF-Sapiens)
+transcriptformer inference \
+  --checkpoint-path ./checkpoints/tf_sapiens \
+  --data-file test/data/human_val.h5ad \
+  --output-path ./inference_results \
+  --batch-size 8
+
+# Inference on out-of-distribution species (e.g., mouse with TF-Sapiens)
+transcriptformer inference \
+  --checkpoint-path ./checkpoints/tf_sapiens \
+  --data-file test/data/mouse_val.h5ad \
+  --pretrained-embedding ./checkpoints/all_embeddings/mus_musculus_gene.h5 \
+  --batch-size 8
 ```
 
-#### Key Parameters:
+### Advanced Configuration
 
-- `model.checkpoint_path`: Path to the checkpoint directory containing model weights and vocabulary files
-- `model.inference_config.data_files`: Path(s) to input data files (H5AD format)
-- `model.inference_config.pretrained_embedding`: Path(s) to pretrained embeddings (out-of-distribution species)
-- `model.inference_config.output_path`: Directory to save inference results
-- `model.inference_config.batch_size`: Batch size for inference (default: 32)
-- `model.inference_config.precision`: Numerical precision (default: "16-mixed")
-
-#### Example:
-For in-distribution species (e.g. human with TF-Sapiens):
-```bash
-# Inference on in-distribution species
-python inference.py --config-name=inference_config.yaml \
-  model.checkpoint_path=./checkpoints/tf_sapiens \
-  model.inference_config.data_files.0=test/data/human_val.h5ad \
-  model.inference_config.batch_size=8
-```
-
-For out-of-distribution species (e.g. mouse with TF-Sapiens) supply the embedding file:
+For advanced configuration options not exposed as CLI arguments, use the `--config-override` parameter:
 
 ```bash
-# Inference on out-of-distribution species
-python inference.py --config-name=inference_config.yaml \
-  model.checkpoint_path=./checkpoints/tf_sapiens \
-  model.inference_config.data_files.0=test/data/mouse_val.h5ad \
-  model.inference_config.pretrained_embedding=./checkpoints/all_embeddings/mus_musculus_gene.h5
-  model.inference_config.batch_size=8
+transcriptformer inference \
+  --checkpoint-path ./checkpoints/tf_sapiens \
+  --data-file test/data/human_val.h5ad \
+  --config-override model.data_config.normalize_to_scale=10000 \
+  --config-override model.inference_config.obs_keys.0=cell_type
 ```
 
-To specify multiple input files, use indexed notation:
+To see all available CLI options:
 
 ```bash
-python inference.py --config-name=inference_config.yaml \
-  model.checkpoint_path=./checkpoints/tf_sapiens \
-  model.inference_config.data_files.0=test/data/human_val.h5ad \
-  model.inference_config.data_files.1=test/data/mouse_val.h5ad
+transcriptformer inference --help
+transcriptformer download --help
 ```
 
-Or use the list notation:
-
-```bash
-python inference.py --config-name=inference_config.yaml \
-  model.checkpoint_path=../checkpoints/tf_sapiens \
-  "model.inference_config.data_files=[test/data/human_val.h5ad,test/data/mouse_val.h5ad]"
-```
-
-#### Input Data Format:
+### Input Data Format:
 
 Input data files should be in H5AD format (AnnData objects) with the following requirements:
 
@@ -181,7 +165,7 @@ Input data files should be in H5AD format (AnnData objects) with the following r
 
 - **Cell Metadata**: Any cell metadata in the `obs` dataframe will be preserved in the output
 
-#### Output Format:
+### Output Format:
 
 The inference results will be saved to the specified output directory (default: `./inference_results`) in a file named `embeddings.h5ad`. This is an AnnData object where:
 
@@ -189,17 +173,7 @@ The inference results will be saved to the specified output directory (default: 
 - Original cell metadata is preserved in the `obs` dataframe
 - Log-likelihood scores (if available) are stored in `uns['llh']`
 
-#### Output:
-
-The inference results will be saved to the specified output directory. The script will generate:
-
-1. Gene embeddings for each cell
-2. Log-likelihood scores
-3. Metadata from the original dataset
-
-Results are saved in HDF5 format with the same structure as the input data, with additional embedding matrices and likelihood scores.
-
-For detailed configuration options, see the `conf/inference_config.yaml` file.
+For detailed configuration options, see the `src/transcriptformer/cli/conf/inference_config.yaml` file.
 
 ## Contributing
 This project adheres to the Contributor Covenant code of conduct. By participating, you are expected to uphold this code. Please report unacceptable behavior to opensource@chanzuckerberg.com.

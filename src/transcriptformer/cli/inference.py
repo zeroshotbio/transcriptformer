@@ -5,7 +5,8 @@ Example usage:
     python inference.py --config-name=inference_config.yaml \
   model.checkpoint_path=./checkpoints/tf_sapiens \
   model.inference_config.data_files.0=test/data/human_val.h5ad \
-  model.inference_config.output_path=./inference_results \
+  model.inference_config.output_path=./custom_results_dir \
+  model.inference_config.output_filename=custom_embeddings.h5ad \
   model.inference_config.batch_size=8
 """
 
@@ -21,19 +22,12 @@ from transcriptformer.model.inference import run_inference
 # Set up logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-print("""
-\033[38;2;138;43;226m ___________  ___   _   _  _____           _       _  ______ ______________  ___ ___________
-\033[38;2;138;43;226m|_   _| ___ \\/ _ \\ | \\ | |/  ___|         (_)     | | |  ___|  _  | ___ \\  \\/  ||  ___| ___ \\
-\033[38;2;132;57;207m  | | | |_/ / /_\\ \\|  \\| |\\ `--.  ___ _ __ _ _ __ | |_| |_  | | | | |_/ / .  . || |__ | |_/ /
-\033[38;2;126;71;188m  | | |    /|  _  || . ` | `--. \\/ __| '__| | '_ \\| __|  _| | | | |    /| |\\/| ||  __||    /
-\033[38;2;120;85;169m  | | | |\\ \\| | | || |\\  |/\\__/ / (__| |  | | |_) | |_| |   \\ \\_/ / |\\ \\| |  | || |___| |\\ \\
-\033[38;2;114;99;150m  \\_/ \\_| \\_\\_| |_/\\_| \\_/\\____/ \\___|_|  |_| .__/ \\__\\_|    \\___/\\_| \\_\\_|  |_/\\____/\\_| \\_|
-\033[38;2;108;113;131m                                            | |
-\033[38;2;108;113;131m                                            |_|
-\033[0m""")
 
-
-@hydra.main(config_path="conf", config_name="config.yaml", version_base=None)
+@hydra.main(
+    config_path=os.path.join(os.path.dirname(__file__), "conf"),
+    config_name="inference_config.yaml",
+    version_base=None,
+)
 def main(cfg: DictConfig):
     logging.debug(OmegaConf.to_yaml(cfg))
 
@@ -56,7 +50,11 @@ def main(cfg: DictConfig):
     output_path = cfg.model.inference_config.output_path
     if not os.path.exists(output_path):
         os.makedirs(output_path)
-    save_file = os.path.join(output_path, "embeddings.h5ad")
+
+    # Get output filename from config or use default
+    output_filename = getattr(cfg.model.inference_config, "output_filename", "embeddings.h5ad")
+    save_file = os.path.join(output_path, output_filename)
+
     adata_output.write_h5ad(save_file)
     logging.info(f"Saved embeddings to {save_file}")
 
