@@ -139,6 +139,9 @@ class DataConfig:
     esm2_mappings: list[str] | None = None
     special_tokens: list[str] | None = None
     esm2_mappings_path: str | None = None
+    use_raw: bool | None = (
+        None  # If True, use adata.raw.X, if False use adata.X, if None try raw first then fallback to X
+    )
 
 
 # Parameters that control the loss function

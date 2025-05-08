@@ -27,15 +27,6 @@ def load_data(file_path):
         return None, False
 
 
-def load_gene_features(adata, gene_col_name):
-    """Load gene features from a CSV file."""
-    try:
-        gene_names = np.array(list(adata.var[gene_col_name].values))
-        return gene_names, True
-    except KeyError:
-        return None, False
-
-
 def apply_filters(
     X,
     obs,
@@ -170,20 +161,21 @@ class AnnDataset(Dataset):
         gene_vocab: dict[str, str],
         data_dir: str = None,
         aux_vocab: dict[str, dict[str, str]] = None,
-        max_len: int = 2000,
+        max_len: int = 2048,
         normalize_to_scale: bool = None,
         sort_genes: bool = False,
         randomize_order: bool = False,
         pad_zeros: bool = True,
-        gene_col_name: str = "feature_id",
+        gene_col_name: str = "ensembl_id",
         filter_to_vocab: bool = True,
         filter_outliers: float = 0.0,
-        min_expressed_genes: int = 200,
+        min_expressed_genes: int = 0,
         seed: int = 0,
         pad_token: str = "[PAD]",
         clip_counts: float = 1e10,
         inference: bool = False,
         obs_keys: list[str] = None,
+        use_raw: bool = None,
     ):
         super().__init__()
         self.data_dir = data_dir
@@ -204,6 +196,7 @@ class AnnDataset(Dataset):
         self.clip_counts = clip_counts
         self.inference = inference
         self.obs_keys = obs_keys
+        self.use_raw = use_raw
 
         self.gene_tokenizer = BatchGeneTokenizer(gene_vocab)
         if aux_vocab is not None:
@@ -213,6 +206,78 @@ class AnnDataset(Dataset):
 
         logging.info("Loading and processing all data")
         self.data = self.load_and_process_all_data()
+
+    def _get_counts_layer(self, adata: anndata.AnnData) -> str:
+        if self.use_raw is True:
+            if adata.raw is not None:
+                logging.info("Using 'raw.X' layer from AnnData object")
+                return adata.raw.X
+            else:
+                raise ValueError("raw.X not found in AnnData object")
+        elif self.use_raw is False:
+            if adata.X is not None:
+                logging.info("Using 'X' layer from AnnData object")
+                return adata.X
+            else:
+                raise ValueError("X not found in AnnData object")
+        else:  # None - try raw first, then fallback to X
+            if adata.raw is not None:
+                logging.info("Using 'raw.X' layer from AnnData object")
+                return adata.raw.X
+            elif adata.X is not None:
+                logging.info("Using 'X' layer from AnnData object")
+                return adata.X
+            else:
+                raise ValueError("No valid data layer found in AnnData object")
+
+    def _to_dense(self, X: np.ndarray | csr_matrix | csc_matrix) -> np.ndarray:
+        if isinstance(X, csr_matrix | csc_matrix):
+            return X.toarray()
+        elif isinstance(X, np.ndarray):
+            return X
+        else:
+            raise TypeError(f"Expected numpy array or sparse matrix, got {type(X)}")
+
+    def _is_raw_counts(self, X: np.ndarray) -> bool:
+        # Get non-zero values
+        non_zero_mask = X > 0
+        if not np.any(non_zero_mask):
+            return False
+
+        # Sample up to 1000 non-zero values
+        non_zero_values = X[non_zero_mask]
+        if len(non_zero_values) > 1000:
+            non_zero_values = np.random.choice(non_zero_values, 1000, replace=False)
+
+        # Check if values are roughly integers (within float32 precision)
+        # float32 has ~7 decimal digits of precision
+        is_integer = np.all(np.abs(non_zero_values - np.round(non_zero_values)) < 1e-6)
+
+        return is_integer
+
+    def _load_gene_features(self, adata):
+        """Load gene features and remove version numbers from ensembl ids"""
+        try:
+            gene_names = np.array(list(adata.var[self.gene_col_name].values))
+            gene_names = np.array([id.split(".")[0] for id in gene_names])
+
+            # Check for duplicates after removing version numbers
+            unique_genes = set(gene_names)
+            if len(unique_genes) != len(gene_names):
+                duplicates = set()
+                for gene in gene_names:
+                    if gene in unique_genes:
+                        duplicates.add(gene)
+
+                raise ValueError(
+                    f"Found {len(duplicates)} duplicate genes after removing version numbers. "
+                    f"Please remove duplicate genes from your data. "
+                    f"Duplicates Found: {list(duplicates)}"
+                )
+
+            return gene_names, True
+        except KeyError:
+            return None, False
 
     def _get_batch_from_file(self, file: str | anndata.AnnData) -> BatchData | None:
         if isinstance(file, str):
@@ -232,13 +297,21 @@ class AnnDataset(Dataset):
             logging.error(f"Failed to load data from {file_path}")
             return None
 
-        gene_names, success = load_gene_features(adata, self.gene_col_name)
+        gene_names, success = self._load_gene_features(adata)
         if not success:
             logging.error(f"Failed to load gene features from {file_path}")
             return None
 
-        X = adata.X.toarray() if isinstance(adata.X, csr_matrix | csc_matrix) else adata.X
+        X = self._get_counts_layer(adata)
+        X = self._to_dense(X)
         obs = adata.obs
+
+        # Check if the data appears to be raw counts
+        if not self._is_raw_counts(X):
+            logging.warning(
+                "Data does not appear to be raw counts. TranscriptFormer expects unnormalized count data. "
+                "If your data is normalized, consider using the original count matrix instead."
+            )
 
         vocab = self.gene_vocab
         X, obs, gene_names = apply_filters(
@@ -291,7 +364,7 @@ class AnnDataset(Dataset):
     def load_and_process_all_data(self):
         all_data = []
         for i, file in enumerate(self.files_list):
-            logging.info(f"Processing validation file {i+1} of {len(self.files_list)}")
+            logging.info(f"Processing data file {i+1} of {len(self.files_list)}")
             file_batch = self._get_batch_from_file(file)
             if file_batch is None:
                 continue
