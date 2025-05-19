@@ -202,6 +202,10 @@ Run the example with:
 python finetune_lora.py \
   --checkpoint-path ./checkpoints/tf_sapiens \
   --train-files path/to/train.h5ad \
+  --lora-r 4 \
+  --lora-alpha 16 \
+  --lora-dropout 0.0 \
+  --lora-target-modules linear1 linear2 linears
 ```
 
 The script uses `AnnDataset` for preprocessing so the inputs match those used during pretraining. Training logic is minimal (one epoch with PyTorch Lightning) and is intended as a starting point for custom fine‑tuning workflows. Only the adapter weights are saved to keep checkpoints small.
