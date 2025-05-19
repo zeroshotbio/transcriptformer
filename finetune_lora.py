@@ -52,6 +52,12 @@ def main() -> None:
     parser.add_argument("--lora-r", type=int, default=4)
     parser.add_argument("--lora-alpha", type=float, default=16.0)
     parser.add_argument("--lora-dropout", type=float, default=0.0)
+    parser.add_argument(
+        "--lora-target-modules",
+        nargs="+",
+        default=("linear1", "linear2", "linears"),
+        help="Qualified name substrings of Linear modules to LoRA-ize",
+    )
     args = parser.parse_args()
 
     data_cfg, model_cfg, loss_cfg = load_configs(args.checkpoint_path)
@@ -79,7 +85,12 @@ def main() -> None:
         state = torch.load(weights_path, map_location="cpu", weights_only=True)
         model.load_state_dict(state)
 
-    lora_cfg = LoRAConfig(r=args.lora_r, alpha=args.lora_alpha, dropout=args.lora_dropout)
+    lora_cfg = LoRAConfig(
+        r=args.lora_r,
+        alpha=args.lora_alpha,
+        dropout=args.lora_dropout,
+        target_modules=tuple(args.lora_target_modules),
+    )
     apply_lora(model, lora_cfg)
 
     dataset = AnnDataset(
