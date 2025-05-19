@@ -33,6 +33,10 @@ TranscriptFormer is designed to learn rich, context-aware representations of sin
 For more details, please refer to our manuscript: [A Cross-Species Generative Cell Atlas Across 1.5 Billion Years of Evolution: The TranscriptFormer Single-cell Model](https://www.biorxiv.org/content/10.1101/2025.04.25.650731v1)
 
 
+## Goals for Today
+
+We're planning to learn as much as possible about the technical details of TranscriptFormer toward setting up LoRA finetuning.
+
 ## Installation
 
 Transcriptformer requires Python >=3.11.
