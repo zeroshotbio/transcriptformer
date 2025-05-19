@@ -194,8 +194,7 @@ For detailed configuration options, see the `src/transcriptformer/cli/conf/infer
 
 This repository includes a lightweight [LoRA](https://arxiv.org/abs/2106.09685) implementation for adapting TranscriptFormer to new datasets.
 
-- `src/transcriptformer/model/lora.py` defines the `LoRALinear` layer and an `apply_lora` utility that swaps every `nn.Linear` whose name matches the default patterns.
-- `finetune_lora.py` demonstrates how to load a pretrained checkpoint, apply LoRA adapters and run a simple training loop.
+
 
 Run the example with:
 
@@ -203,7 +202,6 @@ Run the example with:
 python finetune_lora.py \
   --checkpoint-path ./checkpoints/tf_sapiens \
   --train-files path/to/train.h5ad \
-  --output-path lora_weights.pt
 ```
 
 The script uses `AnnDataset` for preprocessing so the inputs match those used during pretraining. Training logic is minimal (one epoch with PyTorch Lightning) and is intended as a starting point for custom fine‑tuning workflows. Only the adapter weights are saved to keep checkpoints small.
