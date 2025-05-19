@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
 from collections.abc import Iterator
+from dataclasses import dataclass
 
 import torch
 from torch import nn
@@ -47,9 +47,8 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Compute the linear transformation with LoRA adaptation."""
         result = self.linear(x)
-        lora_out = nn.functional.linear(
-            self.dropout(x), self.weight_b @ self.weight_a
-        ) * self.scaling
+        lora_out = nn.functional.linear(x, self.weight_b @ self.weight_a) * self.scaling
+        lora_out = self.dropout(lora_out)
         return result + lora_out
 
 
@@ -57,10 +56,11 @@ def _replace_module(parent: nn.Module, child_name: str, new_module: nn.Module) -
     setattr(parent, child_name, new_module)
 
 
-def apply_lora(module: nn.Module, cfg: LoRAConfig) -> None:
+def apply_lora(module: nn.Module, cfg: LoRAConfig, prefix: str = "") -> None:
     """Recursively replace ``nn.Linear`` modules with :class:`LoRALinear`."""
     for name, child in list(module.named_children()):
-        if isinstance(child, nn.Linear) and any(t in name for t in cfg.target_modules):
+        qualified = f"{prefix}.{name}" if prefix else name
+        if isinstance(child, nn.Linear) and any(t in qualified for t in cfg.target_modules):
             lora_layer = LoRALinear(
                 child.in_features,
                 child.out_features,
@@ -74,7 +74,7 @@ def apply_lora(module: nn.Module, cfg: LoRAConfig) -> None:
                 lora_layer.linear.bias.data.copy_(child.bias.data)
             _replace_module(module, name, lora_layer)
         else:
-            apply_lora(child, cfg)
+            apply_lora(child, cfg, qualified)
 
 
 def iter_lora_layers(module: nn.Module) -> Iterator[tuple[str, LoRALinear]]:
