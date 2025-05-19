@@ -33,9 +33,6 @@ TranscriptFormer is designed to learn rich, context-aware representations of sin
 For more details, please refer to our manuscript: [A Cross-Species Generative Cell Atlas Across 1.5 Billion Years of Evolution: The TranscriptFormer Single-cell Model](https://www.biorxiv.org/content/10.1101/2025.04.25.650731v1)
 
 
-## Goals for Today
-
-We're planning to learn as much as possible about the technical details of TranscriptFormer toward setting up LoRA finetuning.
 
 ## Installation
 
@@ -192,6 +189,25 @@ The inference results will be saved to the specified output directory (default: 
 - Log-likelihood scores (if available) are stored in `uns['llh']`
 
 For detailed configuration options, see the `src/transcriptformer/cli/conf/inference_config.yaml` file.
+
+## Fine-tuning with LoRA
+
+This repository includes a lightweight [LoRA](https://arxiv.org/abs/2106.09685) implementation for adapting TranscriptFormer to new datasets.
+
+- `src/transcriptformer/model/lora.py` provides the `LoRALinear` layer and an `apply_lora` function controlled by a `LoRAConfig` dataclass. Modules whose names contain any of `LoRAConfig.target_modules` (defaults to `("linear1", "linear2", "linears")`) are replaced with LoRA adapters.
+- `finetune_lora.py` demonstrates how to load a pretrained checkpoint, apply LoRA adapters and run a simple training loop. The script exposes `--lora-r`, `--lora-alpha` and `--lora-dropout` arguments for configuring the adapters.
+
+Run the example with:
+
+```bash
+python finetune_lora.py \
+  --checkpoint-path ./checkpoints/tf_sapiens \
+  --train-files path/to/train.h5ad \
+  --output-path lora_weights.pt \
+  --lora-r 4 --lora-alpha 16 --lora-dropout 0.0
+```
+
+The script uses `AnnDataset` for preprocessing so the inputs match those used during pretraining. Training logic is minimal (one epoch with PyTorch Lightning) and is intended as a starting point for custom fine‑tuning workflows. Only the adapter weights are saved to keep checkpoints small.
 
 ## Contributing
 This project adheres to the Contributor Covenant code of conduct. By participating, you are expected to uphold this code. Please report unacceptable behavior to opensource@chanzuckerberg.com.
