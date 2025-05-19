@@ -1,6 +1,7 @@
 import logging
 import os
 import random
+from collections import Counter
 
 import anndata
 import numpy as np
@@ -261,14 +262,10 @@ class AnnDataset(Dataset):
             gene_names = np.array(list(adata.var[self.gene_col_name].values))
             gene_names = np.array([id.split(".")[0] for id in gene_names])
 
-            # Check for duplicates after removing version numbers
-            unique_genes = set(gene_names)
-            if len(unique_genes) != len(gene_names):
-                duplicates = set()
-                for gene in gene_names:
-                    if gene in unique_genes:
-                        duplicates.add(gene)
-
+            # Track gene frequency to identify real duplicates
+            gene_counts = Counter(gene_names)
+            duplicates = {gene for gene, count in gene_counts.items() if count > 1}
+            if duplicates:
                 raise ValueError(
                     f"Found {len(duplicates)} duplicate genes after removing version numbers. "
                     f"Please remove duplicate genes from your data. "
