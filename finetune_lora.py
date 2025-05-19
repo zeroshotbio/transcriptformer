@@ -5,7 +5,8 @@ Example
 >>> python finetune_lora.py \
 ...     --checkpoint-path ./checkpoints/tf_sapiens \
 ...     --train-files train.h5ad \
-...     --output-path lora_weights.pt
+...     --output-path lora_weights.pt \
+...     --lora-r 4 --lora-alpha 16 --lora-dropout 0.0
 """
 
 from __future__ import annotations
@@ -21,7 +22,11 @@ from torch.utils.data import DataLoader
 
 from transcriptformer.data.dataclasses import DataConfig, LossConfig, ModelConfig
 from transcriptformer.data.dataloader import AnnDataset
-from transcriptformer.model.lora import apply_lora, lora_state_dict
+from transcriptformer.model.lora import (
+    LoRAConfig,
+    apply_lora,
+    lora_state_dict,
+)
 from transcriptformer.model.model import Transcriptformer
 from transcriptformer.tokenizer.vocab import load_vocabs_and_embeddings
 
@@ -45,7 +50,8 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--epochs", type=int, default=1)
     parser.add_argument("--lora-r", type=int, default=4)
-    parser.add_argument("--lora-alpha", type=float, default=1.0)
+    parser.add_argument("--lora-alpha", type=float, default=16.0)
+    parser.add_argument("--lora-dropout", type=float, default=0.0)
     args = parser.parse_args()
 
     data_cfg, model_cfg, loss_cfg = load_configs(args.checkpoint_path)
@@ -73,7 +79,8 @@ def main() -> None:
         state = torch.load(weights_path, map_location="cpu", weights_only=True)
         model.load_state_dict(state)
 
-    apply_lora(model, r=args.lora_r, alpha=args.lora_alpha)
+    lora_cfg = LoRAConfig(r=args.lora_r, alpha=args.lora_alpha, dropout=args.lora_dropout)
+    apply_lora(model, lora_cfg)
 
     dataset = AnnDataset(
         files_list=args.train_files,
