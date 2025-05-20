@@ -220,3 +220,53 @@ Please note: If you believe you have found a security issue, please responsibly 
 
 If you use TranscriptFormer in your research, please cite:
 Pearce, J. D., et. al. (2025). A Cross-Species Generative Cell Atlas Across 1.5 Billion Years of Evolution: The TranscriptFormer Single-cell Model. bioRxiv. Retrieved April 29, 2025, from https://www.biorxiv.org/content/10.1101/2025.04.25.650731v1
+
+
+Below is a concise “Windows + CUDA quick-start” block you can drop straight into the Installation / Quick-start section of README.md. After adding it, commit and push the change exactly as you do for any other file.
+
+markdown
+Copy
+Edit
+## Windows (CUDA) quick-start 🪟⚡
+
+PyTorch 2.5 turns **torch.compile** on by default and the Flex-Attention layer
+in TranscriptFormer likewise tries to JIT-compile its masks.  
+Because Triton does not (yet) ship official Windows wheels, the first
+inference run may abort with:
+
+RuntimeError: Cannot find a working triton installation …
+
+shell
+Copy
+Edit
+
+Until Triton for Windows lands, disable the compile stack and run in eager
+CUDA:
+
+```powershell
+# PowerShell – place these three lines in  .venv\Scripts\activate.d\no_compile.ps1
+$env:TORCH_COMPILE                           = '0'   # global: skip torch.compile
+$env:TORCHDYNAMO_DISABLE                     = '1'   # belt-and-suspenders
+$env:TORCH_NN_FLEX_ATTENTION_DISABLE_COMPILE = '1'   # flex-attention specific
+Open a new shell, activate the venv, reinstall the CUDA wheels if needed:
+
+powershell
+Copy
+Edit
+pip install --force-reinstall ^
+  torch==2.5.1+cu121 torchvision==0.20.1+cu121 torchaudio==2.5.1+cu121 ^
+  --extra-index-url https://download.pytorch.org/whl/cu121
+Then the usual smoke test works on an RTX-class GPU:
+
+powershell
+Copy
+Edit
+transcriptformer download tf-sapiens --checkpoint-dir .\checkpoints
+transcriptformer inference `
+    --checkpoint-path .\checkpoints\tf_sapiens `
+    --data-file      test\data\human_val.h5ad `
+    --output-path    .\inference_smoke `
+    --batch-size     2
+If you do install an unofficial Triton wheel
+(pip install triton==2.2.0), simply delete the three environment variables
+and reopen your shell to re-enable full JIT.
