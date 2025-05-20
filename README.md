@@ -230,7 +230,7 @@ Edit
 ## Windows (CUDA) quick-start 🪟⚡
 
 PyTorch 2.5 turns **torch.compile** on by default and the Flex-Attention layer
-in TranscriptFormer likewise tries to JIT-compile its masks.  
+in TranscriptFormer likewise tries to JIT-compile its masks.
 Because Triton does not (yet) ship official Windows wheels, the first
 inference run may abort with:
 
