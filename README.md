@@ -270,3 +270,74 @@ transcriptformer inference `
 If you do install an unofficial Triton wheel
 (pip install triton==2.2.0), simply delete the three environment variables
 and reopen your shell to re-enable full JIT.
+
+🗂️ Git LFS (Large File Storage)
+This repository uses Git Large File Storage (Git LFS) to efficiently version and manage large files such as model weights and embedding matrices.
+
+🚀 What files are tracked with LFS?
+The following file types are automatically managed by Git LFS (see .gitattributes):
+
+text
+Copy
+Edit
+*.pt
+*.h5
+*.ckpt
+*.pth
+*.bin
+These typically include:
+
+PyTorch model weights (.pt, .pth)
+
+HDF5-based vocab or data files (.h5)
+
+Lightning or Hugging Face checkpoints (.ckpt)
+
+Serialized NumPy/tensor data (.bin)
+
+🧱 Setup instructions for contributors
+Before cloning or contributing, you must install Git LFS to ensure proper versioning and avoid breaking the repo with oversized files.
+
+1. Install Git LFS
+Download and install from: https://git-lfs.github.com
+
+Or use your package manager:
+
+bash
+Copy
+Edit
+# macOS (Homebrew)
+brew install git-lfs
+
+# Ubuntu
+sudo apt install git-lfs
+
+# Windows (Scoop, Chocolatey, or GitHub installer)
+scoop install git-lfs
+2. Initialize Git LFS (one-time setup)
+bash
+Copy
+Edit
+git lfs install
+This sets up LFS tracking hooks in your Git configuration.
+
+3. Clone the repository
+bash
+Copy
+Edit
+git clone https://github.com/zeroshotbio/transcriptformer.git
+cd transcriptformer
+Git will automatically download and link all LFS-tracked files (such as model weights).
+
+🛑 Important guidelines
+Never add large files (>100MB) directly to Git — they will be rejected by GitHub and will bloat the repo history.
+
+Only add .pt, .h5, .ckpt, etc. files after confirming they are properly tracked by LFS.
+
+If you're unsure whether LFS is working:
+
+bash
+Copy
+Edit
+git lfs ls-files
+This will list all files currently tracked by LFS in your working directory.
