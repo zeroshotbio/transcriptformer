@@ -361,7 +361,7 @@ class AnnDataset(Dataset):
     def load_and_process_all_data(self):
         all_data = []
         for i, file in enumerate(self.files_list):
-            logging.info(f"Processing data file {i+1} of {len(self.files_list)}")
+            logging.info(f"Processing data file {i + 1} of {len(self.files_list)}")
             file_batch = self._get_batch_from_file(file)
             if file_batch is None:
                 continue
@@ -371,8 +371,7 @@ class AnnDataset(Dataset):
         # Add check for empty all_data list
         if not all_data:
             raise ValueError(
-                "No valid data was loaded from any files. "
-                "Check if files exist and contain valid data after filtering."
+                "No valid data was loaded from any files. Check if files exist and contain valid data after filtering."
             )
 
         concatenated_batch = BatchData(
