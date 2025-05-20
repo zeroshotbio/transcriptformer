@@ -40,6 +40,7 @@ dependencies = [
   "pytest>=8",
   "pytorch-lightning>=2.3",
 
+  "rich>=13",
   "scanpy>=1.11,<1.12",
   "scipy>=1.13",
   "timeout-decorator>=0.5",

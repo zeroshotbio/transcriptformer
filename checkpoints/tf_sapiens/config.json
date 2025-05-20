@@ -1,0 +1,59 @@
+{
+  "model": {
+    "_target_": "transcriptformer.model.model.Transcriptformer",
+    "data_config": {
+      "_target_": "transcriptformer.data.dataclasses.DataConfig",
+      "aux_vocab_path": null,
+      "pin_memory": true,
+      "aux_cols": "assay",
+      "gene_col_name": "ensembl_id",
+      "clip_counts": null,
+      "filter_to_vocabs": null,
+      "filter_outliers": null,
+      "pad_zeros": true,
+      "normalize_to_scale": 0,
+      "n_data_workers": 1,
+      "sort_genes": null,
+      "randomize_genes": null,
+      "min_expressed_genes": null,
+      "gene_pad_token": "[PAD]",
+      "aux_pad_token": "unknown",
+      "esm2_mappings_path": null,
+      "esm2_mappings": [
+        "homo_sapiens_gene.h5"
+      ],
+      "special_tokens": [
+        "unknown",
+        "[PAD]",
+        "[START]",
+        "[END]",
+        "[RD]",
+        "[CELL]",
+        "[MASK]"
+      ]
+    },
+    "model_config": {
+      "_target_": "transcriptformer.data.dataclasses.ModelConfig",
+      "log_counts_eps": 1e-06,
+      "num_heads": 16,
+      "num_layers": 12,
+      "model_dim": 2048,
+      "embed_dim": 2048,
+      "dropout": 0.1,
+      "seq_len": 2047,
+      "aux_len": 1,
+      "block_len": 128,
+      "activation": "gelu",
+      "fw_bias": false,
+      "softcap": 10,
+      "attn_bias": false,
+      "mu_link_fn": "softmax",
+      "gene_head_hidden_dim": 2048
+    },
+    "loss_config": {
+      "_target_": "transcriptformer.data.dataclasses.LossConfig",
+      "gene_id_loss_weight": 1.0,
+      "softplus_approx": true
+    }
+  }
+}
