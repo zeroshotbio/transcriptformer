@@ -3,3 +3,4 @@
 *.ckpt filter=lfs diff=lfs merge=lfs -text
 *.pth filter=lfs diff=lfs merge=lfs -text
 *.bin filter=lfs diff=lfs merge=lfs -text
+test/assets/mini_ckpt.pt -filter -diff -merge
