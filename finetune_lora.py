@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 import warnings
 from pathlib import Path
 from types import SimpleNamespace
@@ -76,8 +77,11 @@ def _strip_hydra(d: dict[str, Any]) -> dict[str, Any]:
 
 
 def _load_cfg(ckpt: Path) -> tuple[DataConfig, ModelConfig, LossConfig]:
-    cfg_p = ckpt / "config.json"
-    raw = json.loads(cfg_p.read_text())["model"]
+    if ckpt.is_file():
+        raw = torch.load(ckpt, map_location="cpu").get("model", {})
+    else:
+        cfg_p = ckpt / "config.json"
+        raw = json.loads(cfg_p.read_text())["model"]
     return (
         DataConfig(**_strip_hydra(raw["data_config"])),
         ModelConfig(**_strip_hydra(raw["model_config"])),
@@ -86,6 +90,8 @@ def _load_cfg(ckpt: Path) -> tuple[DataConfig, ModelConfig, LossConfig]:
 
 
 def _find_weights(ckpt: Path) -> Path:
+    if ckpt.is_file():
+        return ckpt
     for p in (
         ckpt / "pytorch_model.bin",
         ckpt / "model_weights.pt",
@@ -137,12 +143,21 @@ def main() -> None:
     ap.add_argument("--output-path", default="lora_weights.pt")
     ap.add_argument("--batch-size", type=int, default=8)
     ap.add_argument("--epochs", type=int, default=1)
-    ap.add_argument("--devices", type=int, default=1, help="0 → CPU, ≥1 → GPUs")
+    ap.add_argument(
+        "--devices",
+        default="cpu",
+        help="Device count or 'cpu' to force CPU.",
+    )
     ap.add_argument("--precision", default="16-mixed")
     ap.add_argument("--lora-r", type=int, default=4)
     ap.add_argument("--lora-alpha", type=float, default=16.0)
     ap.add_argument("--lora-dropout", type=float, default=0.0)
     ap.add_argument("--lora-target-modules", nargs="+", default=("linear1", "linear2", "linears"))
+    ap.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Instantiate model/dataloader and exit before training (used by CI smoke tests).",
+    )
     args = ap.parse_args()
 
     ckpt_dir = Path(args.checkpoint_path).expanduser().resolve()
@@ -231,8 +246,12 @@ def main() -> None:
         pin_memory=data_cfg.pin_memory,
     )
 
-    accelerator = "cpu" if args.devices == 0 else "gpu"
-    devices_flag = 1 if args.devices == 0 else args.devices
+    if str(args.devices).lower() == "cpu" or str(args.devices) == "0":
+        accelerator = "cpu"
+        devices_flag = 1
+    else:
+        accelerator = "gpu"
+        devices_flag = int(args.devices)
 
     trainer = pl.Trainer(
         max_epochs=args.epochs,
@@ -241,6 +260,10 @@ def main() -> None:
         precision=args.precision,
         log_every_n_steps=5,
     )
+    if args.dry_run:
+        console.log("[bold yellow]Dry-run complete – exiting before training loop.[/]")
+        sys.exit(0)
+
     console.log("[bold]Starting fine-tune (smoke)…[/]")
     trainer.fit(LoRAFineTuner(backbone), dl)
 
