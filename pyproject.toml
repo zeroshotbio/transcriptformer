@@ -3,18 +3,18 @@
 ############################
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
 # --------------------------------------------------------------------------- #
 # Basic package metadata                                                      #
 # --------------------------------------------------------------------------- #
+requires = [ "hatchling" ]
+build-backend = "hatchling.build"
+
 [project]
-name            = "transcriptformer"
-version         = "0.2.1"
-description     = "A transformer model for gene expression data"
-readme          = "README.md"
-license         = { text = "MIT" }
+name = "transcriptformer"
+version = "0.2.1"
+description = "A transformer model for gene expression data"
+readme = "README.md"
+license = { text = "MIT" }
 requires-python = ">=3.11"
 
 classifiers = [
@@ -35,76 +35,93 @@ dependencies = [
   "pandas>=2.2",
   "psutil>=5.9",
   "pynvml>=11.5",
+  # tests (keep here so editable install works out of the box)
+  "pytest>=8",
   # training / inference
   "pytorch-lightning>=2.3",
-  "torch>=2.5,<2.6",
   "rich>=13",
   "scanpy>=1.11,<1.12",
   "scipy>=1.13",
   "timeout-decorator>=0.5",
-  # tests (keep here so editable install works out of the box)
-  "pytest>=8",
+  "torch>=2.5,<2.6",
 ]
 
-# nice clickable links on PyPI -----------------------------------------------
-[project.urls]
-"Bug Tracker" = "https://github.com/czi-ai/transcriptformer/issues"
-"Homepage"    = "https://github.com/czi-ai/transcriptformer"
-
 # console-script entry-points -------------------------------------------------
-[project.scripts]
-transcriptformer = "transcriptformer.cli:main"
-
-# --------------------------------------------------------------------------- #
-# Extras                                                                      #
-# --------------------------------------------------------------------------- #
-[project.optional-dependencies]
-build = [
+optional-dependencies.build = [
   "hatch>=1.14.1",
   "twine>=6.1",
   "wheel>=0.45.1",
 ]
-dev = [
-  "pre-commit",
-  "pytest>=8",
-  "ruff==0.4.4",   # includes `ruff format`
-]
-
 # --------------------------------------------------------------------------- #
 # Hatch build config                                                          #
 # --------------------------------------------------------------------------- #
+# --------------------------------------------------------------------------- #
+# Extras                                                                      #
+# --------------------------------------------------------------------------- #
+urls."Bug Tracker" = "https://github.com/czi-ai/transcriptformer/issues"
+urls."Homepage" = "https://github.com/czi-ai/transcriptformer"
+# nice clickable links on PyPI -----------------------------------------------
+scripts.transcriptformer = "transcriptformer.cli:main"
+optional-dependencies.dev = [
+  "pre-commit",
+  "pytest>=8",
+  "ruff==0.4.4", # includes `ruff format`
+]
+
 [tool.hatch.build.targets.wheel]
-packages = ["src/transcriptformer"]
-include  = ["conf/**/*"]
+packages = [ "src/transcriptformer" ]
+include = [ "conf/**/*" ]
 
 # --------------------------------------------------------------------------- #
 # Ruff (lint / format)                                                        #
 # --------------------------------------------------------------------------- #
+
 [tool.ruff]
 line-length = 120
-src            = ["src"]
-extend-include = ["*.ipynb"]
-exclude        = ["notebooks/"]
+src = [ "src" ]
+extend-include = [ "*.ipynb" ]
+exclude = [ "notebooks/" ]
 format.docstring-code-format = true
 
 lint.select = [
-  "B", "BLE", "C4", "D", "E", "F", "I",
-  "RUF100", "TID", "UP", "W",
+  "B",
+  "BLE",
+  "C4",
+  "D",
+  "E",
+  "F",
+  "I",
+  "RUF100",
+  "TID",
+  "UP",
+  "W",
 ]
 lint.ignore = [
-  "B008", "BLE001",
+  "B008",
+  "BLE001",
   # docstring relaxations
-  "D100", "D101", "D102", "D103", "D104", "D105", "D107",
-  "D203", "D213", "D400", "D401",
+  "D100",
+  "D101",
+  "D102",
+  "D103",
+  "D104",
+  "D105",
+  "D107",
+  "D203",
+  "D213",
+  "D400",
+  "D401",
   # misc
-  "E501", "E731", "E741",
+  "E501",
+  "E731",
+  "E741",
 ]
-lint.per-file-ignores."*/__init__.py" = ["F401"]
-lint.per-file-ignores."tests/*"       = ["D", "F"]
-lint.pydocstyle.convention = "numpy"
-
+lint.per-file-ignores."*/__init__.py" = [ "F401" ]
+lint.per-file-ignores."tests/*" = [ "D", "F" ]
 # --------------------------------------------------------------------------- #
 # Coverage                                                                    #
 # --------------------------------------------------------------------------- #
+lint.pydocstyle.convention = "numpy"
+
 [tool.coverage.run]
-source = ["src/transcriptformer"]
+source = [ "src/transcriptformer" ]

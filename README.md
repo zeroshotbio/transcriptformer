@@ -212,6 +212,21 @@ Pass `--dry-run` to instantiate the model and dataloader then exit before traini
 
 The script uses `AnnDataset` for preprocessing so the inputs match those used during pretraining. Training logic is minimal (one epoch with PyTorch Lightning) and is intended as a starting point for custom fine‑tuning workflows. Only the adapter weights are saved to keep checkpoints small.
 
+### Inference quick-start
+
+Generate `mu` predictions from a saved checkpoint:
+
+```bash
+python -m transcriptformer.predict \
+  --checkpoint-path test/assets/mini_ckpt.pt \
+  --input-files path/to/data.h5ad \
+  --output-path preds.npy \
+  --batch-size 2 \
+  --devices cpu --dry-run
+```
+
+Remove `--dry-run` to write the predictions to `preds.npy`.
+
 ## Contributing
 This project adheres to the Contributor Covenant code of conduct. By participating, you are expected to uphold this code. Please report unacceptable behavior to opensource@chanzuckerberg.com.
 
