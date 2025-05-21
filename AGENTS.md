@@ -58,6 +58,7 @@ Run **all** of the following before completing the task (Codex: run them automat
 | Lint + type upgrades                              | `ruff check src test`          |
 | Auto-format                                       | `ruff format --check src test` |
 | Pre-commit (aggregates hooks incl. pyproject-fmt) | `pre-commit run --all-files`   |
+| CLI smoke test                                    | `pytest test/test_cli_smoke.py::test_cli_dry_run -q` |
 
 Pull-requests **must be green** on every step.
 

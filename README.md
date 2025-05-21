@@ -208,6 +208,8 @@ python finetune_lora.py \
   --lora-target-modules linear1 linear2 linears
 ```
 
+Pass `--dry-run` to instantiate the model and dataloader then exit before training.
+
 The script uses `AnnDataset` for preprocessing so the inputs match those used during pretraining. Training logic is minimal (one epoch with PyTorch Lightning) and is intended as a starting point for custom fine‑tuning workflows. Only the adapter weights are saved to keep checkpoints small.
 
 ## Contributing
